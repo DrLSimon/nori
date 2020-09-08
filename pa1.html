@@ -1,77 +1,14 @@
 <div style="margin-top:-20px">
-<h3>The <tt>git</tt> revision control system</h3>
+<h3>Part 1: the <tt>git</tt> revision control system</h3>
 <div class="text-justify">
 <p>
 	The base code of Nori is provided as a <tt>git</tt> repository. <tt>git</tt>
 	is the most widespread distributed version control system in use today—it is a good
 	idea to familiarize yourself with this system if you've never used it before.
-</p>
-<p>
-	Traditionally, a <em>version control system</em> (VCS) allows a team of
-	people to collaboratively edit a repository of files. Multiple people might
-	happen to work on the same file, and the job of the VCS is to track the
-	(potentially conflicting) modifications and merge them into an unambiguous
-	repository state that is usable to the rest of the team. These systems
-	(e.g. CVS, SVN) store the authoritative repository state in a central
-	repository server. Any changes must be <em>committed</em> to this server so
-	that other team members can access them.
-</p>
-<p>
-	A <em>distributed version control system</em> (DVCS) is conceptually
-	similar: multiple people can collaborate, and there is usually a central
-	repository server. The main difference is that there is nothing special
-	about this server: anyone with sufficient permissions can copy the entire
-	repository state including history data using an operation referred to as
-	<em>cloning</em>. From that point on, the local copy acts as a full-fledged
-	repository server that works without a network connection to the central
-	server. Users can inspect the history of files and even commit new changes,
-	which are stored in the local copy. To allow another user to see these
-	changes, they can either be <em>pushed</em> to that user's DVCS server, or
-		they can be pushed to a central server and then <em>pulled</em> by the
-		recipient. There are many providers (such as <a
-	 href="http://www.github.com">github</a> or <a
-  href="https://bitbucket.org">Bitbucket</a>) which offer free repository
-  hosting for open source projects. Because there is nothing special about the
-  central server, it's easy to switch providers, and anyone can start their own
-  version of an existing repository (this is referred to as <em>forking</em>).
-</p>
-<p>
-<h4>Why <tt>git</tt>?</h4>
-You may wonder why we use <tt>git</tt> in this course given that students are
-expected to work on their own. There are multiple good reasons to use it even
-for a single-user workflow:
-</p>
-<ul>
-	<li>
-		The <tt>git diff</tt> feature lets you see what changes you made since the
-		last commit and commit messages provide additional context. This
-		information is extremely useful when debugging programs that don't work
-		as expected.
-		This assumes that you will commit every logical change as a commit with
-		a descriptive commit message (e.g. "Added a new light source type;
-		implementation of interface to come next").
-	</li>
-	<li>
-		The <tt>git branch</tt> feature makes it easy to try out some large
-		modifications to your code and switch back and forth. It's easy to undo
-		these changes and start from scratch if things don't work out. In
-		general, it's good practice to start a new <em>feature branch</em> for
-		every major feature (e.g. area light support or multiple importance
-		sampling). Once the feature is fully realized and bug-free, it can be
-		merged into the main branch. You'll have to implement multiple features
-		for the final project, and it's a good idea to temporarily separate
-		them from each other in this way.
-	</li>
-	<li>
-		You may stumble across a bug in your code and wonder when it was introduced.
-		The <tt>git bisect</tt> feature lets you quickly find the offending commit.
-	</li>
-	<li>
         As the semester progresses, we will push out a number of additions to
         the Nori framework. You can simply <tt>merge</tt> our new revisions
         into your repository to benefit from these improvements.
-	</li>
-</ul>
+</p>
 <p>
 Recommended learning resources for git are:
 <a href="https://try.github.io/levels/1/challenges/1">try git</a>,
@@ -81,41 +18,66 @@ the extensive free <a href="http://git-scm.com/book/en/v2">Pro Git</a> ebook.
 The remainder of this section describes the steps needed to clone and compile the Nori base code.
 </p>
 </div>
-<div class="text-justify">
-	<h3>Setting up GitHub Classroom</h3>
+<div class="col-md-6 text-justify">
+	<h3>Cloning using the command line</h3>
 	<p>
-		You will receive your own private <a href="https://classroom.github.com">GitHub Classroom</a> repository to work on your programming assignments. Please follow <a href="https://github.com/cs440-epfl/nori-base-2020/wiki/Working-on-assignments">our instructions</a> to get everything set up.
+		The source code of Nori is available on <a
+		href="https://github.com/DrLSimon/nori">github</a>.
+		To check out a copy of the source code, enter
 	</p>
+<pre class="prettyprint lang-bash">
+$ git clone --recursive --single-branch  https://github.com/DrLSimon/nori</pre>
+  <p>
+  on the terminal. The <tt>--recursive</tt> flags ensures
+  that all dependency libraries are cloned as well. The
+  <tt>--single-branch</tt> prevents from fetching the <tt>gh-pages</tt> branch.	
+  </p>
+</div>
+
+<div class="col-md-6 text-justify">
+	<h3>Updating the codebase</h3>
+  <p>
+  We'll likely publish extensions and bug-fixes to this
+  repository as the semester progresses. To get them, 
+  navigate into the <tt>nori</tt> directory and run the command
+  <pre class="prettyprint lang-bash">
+$ git pull</pre>
+  If there were any concurrent modifications to the same file,
+  <tt>git</tt> may ask you to resolve merge conflicts. We refer you to
+  the learning resources for information about resolving conflicts in
+  general.
+  </p>
+</div>
+<div class="row col-md-12">
+    <div class="alert alert-danger" role="alert"><b>Note</b>: Since your
+        repository will contain homework solutions it is (obviously) not OK to
+        post it online (in particular, don't fork the <tt>nori</tt> project on
+        github or elsewhere). Private forks (i.e. without public access) are
+        allowed, however.
+	</div>
 </div>
 
 <div class="row col-md-12">
-<h3>Setting up a C++ compiler and building the base code</h3>
+<h3>Part 2: Setting up a C++ compiler and building the base code</h3>
 <div class="row">
 	<div class="col-md-6">
-		<h3>Linux / macOS</h3>
+		<h3>Configuring on Linux / Mac OS X</h3>
 		<p>
 		Begin by installing the
 		<a href="http://www.cmake.org/download/">CMake</a> build system on your
 		system. On Mac OS X, you will also need to install a reasonably
 		up-to-date version of XCode along with the command line tools.
 		On Linux, any reasonably recent version of GCC or Clang will work.
-		Navigate to the Nori folder, create a build directory and start <tt>cmake-gui</tt>, like so:
+		Navigate to the Nori folder, create a build directory and start <tt>cmake</tt>, like so:
 		</p>
 		<pre class="prettyprint lang-bash">
 $ cd path-to-nori
 $ mkdir build
 $ cd build
-$ cmake-gui ..</pre>
-		<div class="row-centered">
-			<div class="thumbnail col-md-7 col-centered">
-				<a class="fancybox" href="images/linux-cmake.png"><img src="images/linux-cmake.png"/></a>
-				<div class="caption">
-					Set the build type to "Unix Makefiles"
-					and then press the <em>Configure</em>
-					and <em>Generate</em> buttons.
-				</div>
-			</div>
-		</div>
+$ cmake .. -DCMAKE_BUILD_TYPE=Release</pre>
+  </div>
+	<div class="col-md-6">
+		<h3>Building on Linux / Mac OS X</h3>
 		After the Makefiles are generated, simply run
 		<tt>make</tt> to compile all dependencies and Nori itself.
 		<pre class="prettyprint lang-bash">
@@ -124,74 +86,13 @@ $ make -j 4</pre>
 		processors at the same time. Note that you will probably see many
 		warning messages while the dependencies are compiled—you can ignore
 		them.
-
-		<div class="row-centered">
-			<div class="thumbnail col-md-7 col-centered">
-				<a class="fancybox" href="images/build-type-linux.png"><img src="images/build-type-linux.png"/></a>
-				<div class="caption">
-					Tip: it's a good idea to set the build mode to <em>Release</em>
-					unless you are tracking down a particular bug. The debug
-					version runs <em>much slower</em> (by a factor of 50 or
-					more).
-				</div>
-			</div>
-		</div>
-
-		<p>
-		If you're working on Linux, you might have to install a few dependencies
-		separately via your system's package manager. On Kubuntu for example,
-		the following line is necessary:
-		</p>
-		<pre class="prettyprint lang-bash">
-$ apt-get install zlib1g-dev xorg-dev libglu1-mesa-dev </pre>
-	</div>
-	<div class="col-md-6">
-		<h3>Windows / Visual Studio 2017</h3>
-		<p>
-		Begin by installing Visual Studio 2017 and a
-		reasonably recent (≥ 3.x) version of <a href="http://www.cmake.org/download/">CMake</a>. Start CMake and navigate to the location where
-		you cloned the Nori repository.
-		</p>
-		<div class="row-centered">
-			<div class="thumbnail col-md-7 col-centered">
-				<a class="fancybox" href="images/cmake-windows.png"><img src="images/cmake-windows.png"/></a>
-				<div class="caption">
-					Be sure to select the Visual Studio 2017 <b>64</b> bit compiler.
-					It is also generally a good idea to choose a build directory
-					that is <em>different</em> from the source directory.
-				</div>
-			</div>
-		</div>
-		<p>
-		After setting up the project, click the <em>Configure</em> and
-		<em>Generate</em> button. This will create a file called
-		<tt>nori.sln</tt>—double-click it to open Visual Studio.
-		</p>
-
-		<div class="row-centered">
-			<div class="thumbnail col-md-7 col-centered">
-				<a class="fancybox" href="images/vs2013.png"><img src="images/vs2013.png"/></a>
-				<div class="caption">
-					The opened Visual Studio 2017 project. It's a good idea to
-					set the build mode to <em>Release</em> (see the red marker)
-					unless you are tracking down a particular bug. The debug
-					version runs <em>much slower</em> (by a factor of 50 or
-					more).
-				</div>
-			</div>
-		</div>
-		The <em>Build->Build Solution</em> menu item will automatically compile
-		all dependency libraries and Nori itself; the resulting executable is
-		written to the <tt>Release</tt> or <tt>Debug</tt> subfolder of your
-		chosen build directory. Note that you will probably see many warning
-		messages while the dependencies are compiled—you can ignore them.
 	</div>
 </div>
 
 </div>
 
 <div class="row col-md-12">
-<h3>A high-level overview</h3>
+<h3>Part 4: A high-level overview</h3>
 The Nori repository consists of the base code files (left table)
 and several dependency libraries (right table) that are briefly explained below.
 </div>
@@ -241,12 +142,12 @@ and several dependency libraries (right table) that are briefly explained below.
 			<a href="http://eigen.tuxfamily.org">Eigen 3</a> for this
 			purpose. We don't expect you to understand the inner workings of
 			this library but recommend that you at least take a look at the
-			helpful <a href="http://eigen.tuxfamily.org/dox">tutorial</a>
+			helpful <a href="http://eigen.tuxfamily.org/dox">tutorial</a> 
 			provided on the Eigen web page.
 
 			<p>
 				Nori provides a set of linear algebra types that are
-				derived from Eigen's matrix/vector class (see e.g. the header file
+				derived from Eigen's matrix/vector class (see e.g. the header file 
 				<tt>include/nori/vector.h</tt>). This is necessary
 				because we will be handling various quantities that
 				require different treatment when undergoing homogeneous
@@ -389,8 +290,8 @@ and several dependency libraries (right table) that are briefly explained below.
 			of <tt>BSDF</tt> should be used.
 			The <tt>&lt;color&gt;</tt> tag creates a property of name <tt>albedo</tt>
 			that will be passed to its constructor.
-			If you open up the C++ source file <tt>src/diffuse.cpp</tt>, you will see that
-			there is a constructor, which looks for
+			If you open up the C++ source file <tt>src/diffuse.cpp</tt>, you will see that 
+			there is a constructor, which looks for 
 			<span rel="tooltip" title="Or alternatively substitutes 50% grey when no value is provided.">this specific property</span>:
 		</p>
 		<pre class="prettyprint linenums">
@@ -444,7 +345,7 @@ void Mesh::addChild(NoriObject *obj) {
 			before; otherwise, it throws an exception of type <tt>NoriException</tt>.
 		</p>
 		<p>
-			The following different types of properties can currently be passed to
+			The following different types of properties can currently be passed to 
 			objects within the XML description language:
 		</p>
 		<div class="row">
@@ -493,7 +394,7 @@ void Mesh::addChild(NoriObject *obj) {
         &lt;float name="alpha" value="0.1"/&gt;
     &lt;/bsdf&gt;
 &lt;/test&gt;</pre>
-
+		
 		<h3>Creating your first Nori class</h3>
 		<p>
 			In Nori, rendering algorithms are referred to as <em>integrators</em>
@@ -608,9 +509,9 @@ Configuration: Scene[
 Rendering .. done. (took 93.0ms)
 Writing a 1280x720 OpenEXR file to "test.exr"
 </pre>
-The Nori executable echoed the property value we provided, and
+The Nori executable echoed the property value we provided, and 
 it printed a brief human-readable summary of the scene.
-The rendered scene is saved as an OpenEXR file named <tt>test.exr</tt> as well as a (sRGB) tonemapped PNG image named <tt>test.png</tt>.
+The rendered scene is saved as an OpenEXR file named <tt>test.exr</tt>.
 </div>
 <div class="col-md-6">
 	<div class="thumbnail">
@@ -642,7 +543,7 @@ $ ./nori test.exr
 </pre>
 		<h4>Tracing rays</h4>
 		<p>
-		Let's now build a more interesting integrator which traces some rays against the scene geometry. Change the file <tt>normals.cpp</tt> as shown on the left side. Invoke <tt>nori</tt> on the file <tt>scenes/pa1/bunny.xml</tt>, and you should get the image on the right. <b>Please submit the resulting rendered image of the bunny in your homework report to receive credit for making it all the way through the tutorial.</b>
+		Let's now build a more interesting integrator which traces some rays against the scene geometry. Change the file <tt>normals.cpp</tt> as shown on the left side. Invoke <tt>nori</tt> on the file <tt>scenes/pa1/bunny.xml</tt>, and you should get the image on the right. Please submit the resulting EXR file with the first programming assignment solutions to receive credit for making it all the way through the tutorial.
 		</p>
 </div>
 </div>

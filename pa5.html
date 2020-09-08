@@ -18,7 +18,7 @@
         repository by running
     </p>
 <pre class="prettyprint lang-bash">
-$ git pull upstream master
+git pull
 </pre>
     <p>
         If there were any concurrent changes to the same file, you
@@ -26,7 +26,7 @@ $ git pull upstream master
         "Preliminaries" for more information).
     </p>
 
-	<h3>Part 1: Microfacet BRDF <em>(30 points)</em></h3>
+	<h3>Part 1: Microfacet BRDF <em>(6 pts)</em></h3>
     <div class="row" style="margin: 30px">
         <div class="col-md-6">
             <div class="thumbnail" style="margin: 10px">
@@ -46,11 +46,70 @@ $ git pull upstream master
         </div>
     </div>
     <p>
-    In this part we will extend the rudimentary implementation in <tt>microfacet.cpp</tt> into a full-fledge reflectance model based on the <em>microfacet theory</em> presented in class. This utilizes the sampling techniques for the Beckmann distribution that you implemented in a previous assignment. The process is split into two parts:
+    In this part we will extend the rudimentary interface in <tt>microfacet.cpp</tt> into a full-fledge reflectance model based on the <em>microfacet theory</em> presented in class. This process is split into four parts:
    </p>
-    <h4>Part 1.1: Evaluating the Microfacet BRDF (15 pts)</h4>
+   <h4>Part 1.1: Evaluating the Beckmann distribution (1 pts)</h4>
+    <div class="row" style="margin: 30px">
+        <div class="col-md-4"/>
+        <div class="col-md-5">
+            <div class="thumbnail" style="margin: 10px">
+                <a class="fancybox" href="images/beckmann.png"><img src="images/beckmann.png"/></a>
+                <div class="caption">
+                    The Beckmann distribution plotted for different values of \(\alpha\).
+                </div>
+            </div>
+        </div>
+    </div>
+   <p>
+   Recall the <em>Beckmann</em> distribution discussed in class, which models the probability density of normals on a random rough surface:
+    \[
+    D(\theta, \phi) = \underbrace{\frac{1}{2\pi}}_{\text{azimuthal part}}\ \cdot\ \underbrace{\frac{2 e^{\frac{-\tan^2{\theta}}{\alpha^2}}}{\alpha^2 \cos^3 \theta}}_{\text{longitudinal part}}\!\!\!.
+    \]
+    Note that this definition is slightly different from the one shown in class: the density includes an extra cosine factor for normalization purposes so that
+    \[
+    \int_{0}^{2\pi}\int_0^{\frac{\pi}{2}} D(\theta, \phi)\sin\theta\,\mathrm{d}\theta\,\mathrm{d}\phi=1.
+    \]
+    Complete the function
+    <code>Warp::squareToBeckmannPdf</code> in
+    <code>warp.cpp</code> so that it evaluates \(D\) using the above definition.
+    The function takes a normalized Cartesian 3D vector \(\omega\) as input, whose components can be interpreted using the following spherical coordinate representations:
+    \[
+    \omega=\begin{pmatrix}
+    \sin\theta\cos\phi\\
+    \sin\theta\sin\phi\\
+    \cos\theta
+    \end{pmatrix}
+    \]
+    Take a look
+    at the methods in the <code>Frame</code> class if you find yourself
+    evaluating trigonometric functions in the body of <code>Warp::squareToBeckmannPdf</code>.
+    </p>
+   <h4>Part 1.2: Sampling the Beckmann distribution (1 pts)</h4>
+   <p>
+   Having implemented a way to query this distribution, we'll now want to generate points on the sphere that exactly follow the distribution.
+   Note how the \(D(\theta,\phi)\) is symmetric around the north pole (in other words: its spherical coordinate representation is <em>separable</em>). Sampling can thus be split into two steps:
+   </p>
+   <ol>
+   <li>
+       Uniformly sampling the azimuth \(\phi=2\pi\xi_1\) given a uniform variate \(\xi_1\).<br/><br/>
+   </li>
+   <li>
+    Mapping a second uniform variate \(\xi_2\) through the inverse CDF of \(D\)'s
+    longitudinal part to obtain \(\theta\).<br/><br/>
+   </li>
+    </ol>
+    Follow these two steps and implement the resulting sampling technique in <code>Warp::squareToBeckmann</code>. Try running the statistical test implemented in the <tt>warptest</tt> executable -- your implementation should pass the tests for different values of \(\alpha\). You do not need to include the test results in your report, this is just for your own guidance.
+
+    <div class="alert alert-info" role="alert"><b>Hint</b>: You might find integration by substitution useful,
+    e.g. using the mappings \(x = \cos{\theta}\) and \(\tan^2{\theta} = \frac{1-x^2}{x^2}\).
+    In addition this identity might come in handy:
+    \[
+    \int f'(x) ~ e^{~f(x)}\,\mathrm{d}x = e^{~f(x)} + C\text{, where } C\in\mathbb{R}
+    \]
+    </div>
+    <h4>Part 1.3: Evaluating the Microfacet BRDF (1 pts)</h4>
     <p>
-    The Microfacet BRDF in <code>src/microfacet.cpp</code> will be used to simulate plastic-like materials. It consists of a linear blend between a diffuse BRDF (to simulate a potentially colored reflection from the interior of the material) and a rough dielectric microfacet BRDF (to simulate a non-colored specular reflection from the rough boundary). Implement <code>Microfacet::eval()</code> which evaluates the described microfacet BRDF for a given pair of directions in the local shading coordinate frame:
+    The Microfacet BRDF in <code>src/microfacet.cpp</code> will be used to simulate platic-like materials. It consists of a linear blend between a diffuse BRDF (to simulate a potentially colored reflection from the interior of the material) and a rough dielectric microfacet BRDF (to simulate a non-colored specular reflection from the rough boundary). Implement <code>Microfacet::eval()</code> which evaluates the described microfacet BRDF for a given pair of directions in the local shading coordinate frame:
         \[
             f_r(\bold{\omega_i},\bold{\omega_o}) = \frac{k_d}{\pi} + {k_s} \frac{D(\bold{\omega_{h}})~
             F\left({(\bold{\omega_h} \cdot \bold{\omega_i})}, \eta_{e},\eta_{i}\right)~
@@ -71,7 +130,7 @@ $ git pull upstream master
                 1, 										  & \text{otherwise},
             \end{cases} \\
 
-            b = (\alpha \tan{\theta_v})^{-1}, ~~
+            b = (a \tan{\theta_v})^{-1}, ~~
 
             \chi^+(c) =
             \begin{cases}
@@ -83,15 +142,7 @@ $ git pull upstream master
         where \(\theta_v\) is the angle between the surface normal \(\bold{n}\)
         and the \(\omega_v\) argument of \(G_1\).
     </p>
-    <p>
-        Recall the <em>Beckmann</em> distribution from Assignment 3, which is used to model the probability density of normals on a random rough surface:
-        \[
-        D(\theta, \phi) = \underbrace{\frac{1}{2\pi}}_{\text{azimuthal part}}\ \cdot\ \underbrace{\frac{2 e^{\frac{-\tan^2{\theta}}{\alpha^2}}}{\alpha^2 \cos^3 \theta}}_{\text{longitudinal part}}\!\!\!.
-        \]
-        Note that this definition is slightly different from the one shown in class: the density includes an extra cosine factor for normalization purposes so that it integrates to one over the hemisphere.
-    </p>
-
-    <h4>Part 1.2: Sampling the Microfacet BRDF (15 pts)</h4>
+    <h4>Part 1.4: Sampling the Microfacet BRDF (1 pts)</h4>
     <p>
         In this part you will generate samples according to the following density function:
         \[
@@ -100,15 +151,15 @@ $ git pull upstream master
         where \(\omega_o\) is sampled and \(J_h = (4 (\omega_h \cdot \omega_o))^{-1}\)
         is the Jacobian of the half direction mapping discussed in class.
 
-        This can be done using the following sequence of steps:
+        This an be done using the following sequence of steps:
     </p>
     <ol>
         <li>Decide between a diffuse or a specular reflection by comparing a uniform variate \(\xi_1\) against \(k_s\)</li>
-        <li>Scale and potentially offset the uniform variate \(\xi_1\) so that it can be reused for a later sampling step (see <tt>DiscretePDF::sampleReuse</tt>)</li>
+        <li>Scale and potentially offset the uniform variate \(\xi_1\) so that it can be reused for a later sampling step</li>
         <li>In the diffuse case, generate a cosine-weighted direction on the sphere following the approach in <tt>src/diffuse.cpp</tt></li>
         <li>In the specular case:
             <ol>
-                <li>Sample a normal from the Beckmann distribution using <code>Warp::squareToBeckmann</code> that you previously implemented in Assignment 3.</li>
+                <li>Sample a normal from the Beckmann distribution using the approach from Part 1.2</li>
                 <li>Reflect the incident direction using this normal to generate an outgoing direction.</li>
             </ol>
         </li>
@@ -116,113 +167,40 @@ $ git pull upstream master
     <p>
         Note that you will need to implement both <code>Microfacet::sample()</code> and <code>Microfacet::pdf()</code> to be able to run the following tests.
     </p>
-
     <h4>Validation</h4>
-    <p>To obtain the full set of points for the previous exercises, you will
-        need to validate the correctness of your code.</p>
-    <ol>
-        <li>Pass the following statistical tests in <code>scenes/pa5/tests</code>:</li>
-            <ul>
-                <li><tt>chi2test-microfacet.xml</tt></li>
-                <li><tt>ttest-microfacet.xml</tt></li>
-            </ul>
-            <p>
-            The tests are also part of the continous integration environment, so note that your build will "fail" as long as not all tests pass.
-            </p>
-            <p>
-                The <tt>warptest</tt>GUI also contains
-                a \(\chi^2\) test for the BRDF model, but this is just to facilitate debugging and
-                visualization; the XML files are the real validation benchmark.
-                Mention in your report if running these tests produces any errors.
-            </p>
-
-        <br>
-        <li>Use your <tt>whitted</tt> integrator from the previous assignment to render a microfacet Ajax bust and ensure that you can match our references for the following scenes in <code>scenes/pa5</code>:</li>
-            <ul>
-                <li><tt>ajax/ajax-smooth.xml</tt> (<a href="references/ajax-smooth.exr">Reference</a>)</li>
-                <li><tt>ajax/ajax-rough.xml</tt> (<a href="references/ajax-rough.exr">Reference</a>)</li>
-            </ul>
-    </ol>
     <p>
-    <b>Make sure to discuss the design choices and relevant technical information about your implementation in the report and include comparisons against our reference renderings.</b>
+        To obtain the full set of points for the previous exercises, you will
+        need to validate the correctness of your code. The base code
+        includes two XML files containing sequences of statistical tests that a
+        correct implementation should be able to pass.
+        <ul>
+            <li><tt>scenes/pa5/tests/chi2test-microfacet.xml</tt>, </li>
+            <li><tt>scenes/pa5/tests/ttest-microfacet.xml</tt></li>
+        </ul>
+
+        Next, use your <tt>whitted</tt> integrator from the previous
+        assignment to render a microfacet Ajax bust and ensure that you can
+        match our references:
+        <ul>
+            <li><tt>scenes/pa5/ajax/ajax-rough.xml</tt> (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/06/ajax-rough.exr">ajax-rough.exr</a>)
+            </li>
+            <li><tt>scenes/pa5/ajax/ajax-smooth.xml</tt> (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/06/ajax-smooth.exr">ajax-smooth.exr</a>)
+            </li>
+        </ul>
+        The <tt>warptest</tt>GUI also contains
+        a \(\chi^2\) test for both the Beckmann distribution and the complete BRDF model, but this is just to facilitate debugging and
+        visualization; the XML files are the real validation benchmark.
+        Mention in your report if running these tests produces any errors.
     </p>
-
-    <h3>Part 2: <tt>path_mats</tt> Brute force path tracer <em>(15 points)</em></h3>
-    <div class="row" style="margin: 30px">
-        <div class="col-md-6">
-            <div class="thumbnail" style="margin: 10px">
-                <a class="fancybox" href="images/cbox_mats.png"><img src="images/cbox_mats.png"/></a>
-                <div class="caption">
-                    The Cornell box rendered using the brute-force path tracer. Note
-                    the indirect illumination on the ceiling and the light-focusing
-                    behavior of the sphere.
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="thumbnail" style="margin: 10px">
-                <a class="fancybox" href="images/veach_mats.png"><img src="images/veach_mats.png"/></a>
-                <div class="caption">
-                    The Veach material test scene, rendered with brute-force path tracing.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <p>
-        In the lecture you saw that there are multiple ways to solve the rendering equation and the emitter sampling strategy implemented in Assignment 4 was just one possibility. A much simpler (but also more naive) version of path tracing relies on hitting light sources in the scene by pure chance instead of explicitly sampling points on them during integration.
-        In other words, you exchange emitter sampling with sampling outgoing directions according to the BSDF.
-        <br/>
-        Furthermore, we will extend the Whitted-style algorithm into a full path tracer that accounts for indirect illumination as well.
-        The main differences from <code>src/whitted.cpp</code> are:
-        <ol>
-            <li>We (temporarily) removed emitter sampling.</li>
-            <li>Paths should now continue not only after specular surface interactions, but for all interactions.</li>
-        </ol>
-    </p>
-
-    <p>
-        Create a new "material sampling" (mats) path tracer named <code>src/path_mats.cpp</code> that does exactly this. Note that you should use <code>BSDF::sample()</code> to generate new outoing directions at each scattering event. This outgoing direction
-        is used to estimate the indirect illumination component. <b>We recommend that you implement all integrators in this homework using an "iterative" approach with a for-loop compared to the recursive implementation that you might have used for Whitted-style integrator. This is more efficient but will also be considerably easier to debug.</b>
-    </p>
-
-    <p>
-        <strong>Note</strong>: to match the reference renders exactly, you will need to use the following Russian Roulette heuristic for path termination:<br/>
-        <pre class="prettyprint">
-continuation probability = min(maximum component of the throughput * eta^2, 0.99)</pre>
-        where <tt>eta</tt> is the product of all \(\eta\) terms encountered along the path, starting with <tt>eta = 1.f</tt>.
-        Additionally, we recommend to only start doing Russian Roulette after at least three bounces in order to avoid terminating very short paths which would lead to a lot of variance usually.
-    </p>
-
-
-    <h4>Validation</h4>
-    <ol>
-        <li>Render the following scenes in <code>scenes/pa5</code>:</li>
-            <ul>
-                <li><tt>cbox/cbox_mats.xml</tt> (<a href="references/cbox_mats.exr">Reference</a>)</li>
-                <li><tt>veach_mi/veach_mats.xml</tt> (<a href="references/veach_mats.exr">Reference</a>)</li>
-                <li><tt>table/table_mats.xml</tt> (<a href="references/table_mats.exr">Reference</a>)</li>
-            </ul>
-        <br>
-        <li>Pass the following statistical tests in <code>scenes/pa5/tests</code>:</li>
-            <ul>
-                <li><tt>test-direct.xml</tt> (Tests 6-10)</li>
-                <li><tt>test-furnace.xml</tt> (Tests 3-4)</li>
-            </ul>
-            <p>
-            The tests are also part of the continous integration environment, so note that your build will "fail" as long as not all tests pass.
-            </p>
-    </ol>
-    <b>Make sure to discuss the design choices and relevant technical information about your implementation in the report and include comparisons against our reference renderings.</b>
-    </p>
-
-    <h3>Part 3: <tt>path_ems</tt> Path tracer with next event estimation <em>(25 points)</em></h3>
+	<h3>Part 2: Simple Path tracer <em>(2 pts)</em></h3>
     <div class="row" style="margin: 30px">
         <div class="col-md-6">
             <div class="thumbnail" style="margin: 10px">
                 <a class="fancybox" href="images/cbox-gi.jpg"><img src="images/cbox-gi.jpg"/></a>
                 <div class="caption">
-                    The Cornell box rendered using the Next Event Estimation path tracer.
+                    The Cornell box rendered using the simple path tracer. Note
+                    the indirect illumination on the ceiling and the light
+                    focusing behavior of the sphere.
                 </div>
             </div>
         </div>
@@ -238,50 +216,45 @@ continuation probability = min(maximum component of the throughput * eta^2, 0.99
         </div>
     </div>
     <p>
-        In part 2, you implemented a brute-force path tracer. As you may have noticed, it suffers
-        from high variance due to its naive sampling strategy. We'll now implement
-        an "emitter sampling" (ems) path tracer named <code>src/path_ems.cpp</code> (this
-        corresponds to the "Path Tracing with explicit shadow rays" discussed
-        during the lecture). The last part of the assignment will involve adding <em>multiple
-        importance sampling</em> (MIS) to create a full-featured path tracer that combines both
-        sampling strategies to reduce variance.<br/>
-        Starting from <tt>path_mats</tt>, simply add back emitter sampling while taking care of the
-        "double counting" problem discussed in the lecture.
+        In Assignment 4, you implemented a Whitted-style integrator that
+        performed area light sampling on diffuse objects and BRDF sampling on
+        specular objects. Now you'll extend this approach into a full path
+        tracer that accounts for indirect illumination as well. We'll begin
+        with a "simple" path tracer named <code>src/path_simple.cpp</code> that
+        does not (yet) use <em>multiple importance sampling</em> (this
+        corresponds to "Path Tracing with explicit shadow rays" discussed
+        during lecture). The second step involves adding MIS to create a
+        full-featured path tracer that combines both sampling strategies to
+        reduce variance.
     </p>
-
-    <p>
-        <strong>Note</strong>: Different (correct) implementations of emitter sampling will lead to potentially very different noise patterns in the test scenes. If you want to match the reference renders exactly, you will need to (in each iteration) <b>1)</b> Pick one light source uniformly at random, and <b>2)</b> Sample one point on the associated mesh uniformly over its surface area.<br/>
-    </p>
-
-    <h4>Validation</h4>
+    <p>This simple path tracer differs from <code>src/whitted.cpp</code> in the following ways:</p>
     <ol>
-        <li>Render the following scenes in <code>scenes/pa5</code>:</li>
-            <ul>
-                <li><tt>cbox/cbox_ems.xml</tt> (<a href="references/cbox_ems.exr">Reference</a>)</li>
-                <li><tt>veach_mi/veach_ems.xml</tt> (<a href="references/veach_ems.exr">Reference</a>)</li>
-                <li><tt>table/table_ems.xml</tt> (<a href="references/table_ems.exr">Reference</a>)</li>
-            </ul>
-
-            <p>
-            The first scene only uses diffuse and specular materials and can be
-            used to test your path tracer if you didn't do part 1 of this assignment
-            yet. The latter two assume that the microfacet model BRDF is ready.
-            </p>
-        <br>
-        <li>Pass the following statistical tests in <code>scenes/pa5/tests</code>:</li>
-            <ul>
-                <li><tt>test-direct.xml</tt> (Tests 1-5)</li>
-                <li><tt>test-furnace.xml</tt> (Tests 1-2)</li>
-            </ul>
-            <p>
-            The tests are also part of the continous integration environment, so note that your build will "fail" as long as not all tests pass.
-            </p>
+        <li>When the camera ray hits a light source, the value returned by
+            <code>Li()</code> should include the emitted radiance to account for directly visible light sources.</li>
+        <li>Instead of sampling a position on the light source <em>or</em> the
+            BRDF, both are now done in each iteration. The direction sampled
+            from the BRDF is used to estimate the indirect illumination
+            component. This could be implemented using recursion, or more
+            efficiently using a loop.
+        </li>
     </ol>
     <p>
-        <b>Make sure to discuss the design choices and relevant technical information about your implementation in the report and include comparisons against our reference renderings.</b>
+    Use your implementation to render
     </p>
-
-    <h3>Part 4: <tt>path_mis</tt> Path tracer with Multiple Importance Sampling <em>(30 points)</em></h3>
+    <ol>
+        <li>The Cornell box in <code>scenes/pa5/cbox/cbox.xml</code>
+            (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/07/cbox.exr">cbox.exr</a>).</li>
+        <li>The Veach material test scene in <code>scenes/pa5/veach_mi/veach_path_simple.xml</code>
+            (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/07/veach_path_simple.exr">veach_path_simple.exr</a>).</li>
+        <li>The table test scene in <code>scenes/pa5/table/table_path_simple.xml</code>
+            (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/07/table_path_simple.exr">table_path_simple.exr</a>).</li>
+    </ol>
+    <p>
+    The first scene only uses diffuse and specular materials and can be
+    used to test your path tracer if you didn't do part 1 of this assignment
+    yet. The latter two assume that the microfacet model BRDF is ready.
+    </p>
+	<h3>Part 3: Path tracer with Multiple Importance Sampling <em>(2 pts)</em></h3>
     <div class="row" style="margin: 30px">
         <div class="col-md-6">
             <div class="thumbnail" style="margin: 10px">
@@ -302,7 +275,7 @@ continuation probability = min(maximum component of the throughput * eta^2, 0.99
         </div>
     </div>
     <p>
-        For this last part you will combine both sampling strategies from the previous tasks into one integrator <code>src/path_mis.cpp</code> that has <em>multiple importance sampling</em>:
+        Following part 2, extend your path tracer with multiple importance sampling. This specifically entails:
     </p>
     <ol>
         <li>When generating a sample on a light source, determine the density of this
@@ -329,43 +302,17 @@ continuation probability = min(maximum component of the throughput * eta^2, 0.99
             Note the changed numerator in the above expression.
         </li>
     </ol>
-
-    <h4>Validation</h4>
+    <p>
+    Use your implementation to render
+    </p>
     <ol>
-        <li>Render the following scenes in <code>scenes/pa5</code>:</li>
-            <ul>
-                <li><tt>cbox/cbox_mis.xml</tt> (<a href="references/cbox_mis.exr">Reference</a>)</li>
-                <li><tt>veach_mi/veach_mis.xml</tt> (<a href="references/veach_mis.exr">Reference</a>)</li>
-                <li><tt>table/table_mis.xml</tt> (<a href="references/table_mis.exr">Reference</a>)</li>
-            </ul>
-        <br>
-        <li>Pass the following statistical tests in <code>scenes/pa5/tests</code>:</li>
-            <ul>
-                <li><tt>test-direct.xml</tt> (Tests 11-15)</li>
-                <li><tt>test-furnace.xml</tt> (Tests 5-6)</li>
-            </ul>
-            <p>
-            The tests are also part of the continous integration environment, so note that your build will "fail" as long as not all tests pass.
-            </p>
+        <li>The Veach material test scene in <code>scenes/pa5/veach_mi/veach_path.xml</code>
+            (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/07/veach_path.exr">veach_path.exr</a>).</li>
+        <li>The table test scene in <code>scenes/pa5/table/table_path.xml</code>
+            (reference: <a href="https://rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/04/07/table_path.exr">table_path.exr</a>).</li>
     </ol>
-    <b>Make sure to discuss the design choices and relevant technical information about your implementation in the report and include comparisons against our reference renderings.</b>
-    </p>
 
-
-    <h3>Artist Points: Interesting scene (5 points)</h3>
-    <div class="alert alert-info" role="alert"><b>Disclaimer</b>: Artist points are bonus tasks where you get the opportunity to showcase your own renderings created with your implemented algorithms. They are added to the final score.
-    </div>
-    <p>
-        Build your own artistically appealing scene and include a rendering of it in your report. Use any of the implemented integrators so far - or build something entirely new! Be creative, your renderings may be posted in a gallery on the course website, with your permission. This is a good exercise to get some practice putting together a scene by yourself. <b>This skill will be very useful for creating your scene for the final project.</b>
-    </p>
-    <p>
-        We recommend to use the 3D modeling tool <a href="https://www.blender.org/">Blender</a>. It can be used to arrange models or to create your own. Feel free to use existing models from websites such as <a href="https://www.blendswap.com/">Blendswap</a>. We provide a (rudimentary) Blender plugin (<code>ext/plugin</code>) that can help with some of the steps involved with exporting a scene to the Nori description language.
-    </p>
-    <p>
-        Please include a short section in the report with your render and credits to any 3D models you used. The artistic characteristics will be graded very leniently :)
-    </p>
-
-	<h3> Hacker Points: refraction through rough dielectrics<em> (20 points)</em></h3>
+	<h3> Hacker Points: refraction through rough dielectrics<em> (2 pts)</em></h3>
 <div class="alert alert-info" role="alert"><b>Disclaimer</b>: Hacker points are “underpriced” bonus points
 for the daring few. Sometimes you might be required to implement something that was not taught in class and
 you might have to do some research and creative thinking. Hacker Points are awarded only to students who
@@ -406,10 +353,11 @@ implemented all of the remaining assignment, and they are added to the final sco
         vector for refraction.
     </p>
 
-	<h4> What to include in your report </h4>
+	<h4> What to submit </h4>
 	<p>
 		<ul>
             <li> A discussion of how you chose to implement the Walter et al. paper in Nori. </li>
+            <li> The code of your new <code>roughdielectric</code> BSDF.</li>
             <li> At least two refractive renderings of the Ajax scene with different roughness values.</li>
             <li> Results of Chi^2 tests, which demonstrate that your sampling technique works correctly.</li>
 		</ul>

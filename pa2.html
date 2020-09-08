@@ -1,274 +1,90 @@
-<div>
-In this assignment, you get to build your own implementation of an
-<em>octree</em>, a hierarchical data structure that enables fast ray
-intersection computations involving very large numbers of triangles.
+<div style="margin-top:-20px; text-align:justify">
+	<h3>Preliminaries</h3>
+	<p>
+    In this exercise you will implement ray / object intersection
+    routines for several objects: sphere, cylinder, CSG and a few more.
+	</p>
 
-<center>
-    <img src="images/octree.png">
-</center>
+	<p>
+		This exercise is split into several parts; in each case, you will be
+		asked to implement a ray / object intersection. Each implementation
+    shall be placed in its own class derived from the abstract class <code>Shape</code>.
+    In order to be complete, the derived class must implement the function
+    <code>Shape::rayIntersect</code> (and may implement <code>Shape::getBoundingBox</code>).
+    In addition, do not forget to register the class in the <code>NoriObject</code> 
+    <em>factory</em>. To do so, you simply need to call the <code>NORI_REGISTER_CLASS</code> macro.
+    Eventually, you will have to add the new <tt>cpp</tt> source files in the <tt>CMakeLists.txt</tt>
+    file.
+    You can start by reproducing the organization of the <code>Plane</code> class available
+    in the <tt>src/plane.cpp</tt> file.
+	</p>
 
-Each node of an octree covers an axis-aligned region of space denoted by two
-points \(\mathbf{p}_\textrm{min}\) and \(\mathbf{p}_\textrm{max}\).
-An interior node has exactly eight child nodes that partition this space into
-eight equal-sized subregions. The region of space covered by the \(i\)-th child
-of an octree-node is defined as the bounding box containing both the center and
-the \(i\)-th corner of its parent (using a suitable ordering of the corners).
+	<h3>Part 1: Sphere, Box, Instancing, Cylinder, Cone <em>(70 points)</em></h3>
+	<p>
+    For each of the following primitives, implement the missing class in 
+    a new file (<em>e.g.</em><code>class Sphere</code> in file  
+    <tt>src/sphere.cpp</tt>):
+	</p>
+	
+  <ul>
+		<li>
+			<h4><code>class Sphere</code>  <em> (20 Points)</em></h4>
+      <p>
+        Here you should implement the intersection between a ray and an unit sphere.
+        A part from the implementation of <code>Sphere::rayIntersect</code> the rest 
+        of the class can be taken from <code>class Plane</code>.
+        You should save computational power by avoiding as many call to
+        <code>sqrt</code> as possible. To do so, you need to implement early
+        rejects (for instance in case the ray is to far from the sphere
+        center).
+      </p>
+		</li>
+		<li>
+			<h4><code>class Box</code>  <em> (30 Points)</em></h4>
+      <p>
+        Here you should implement the intersection between a ray and an <em>axis-aligned</em> unit box.
+        You should implement the <em>one hit to rule them all</em> strategy.
+        It consists in computing the intersection with a single side plane of the box.
+        Then all other intersections must be computed efficiently. Last, testing whether
+        the ray truly intersect the box can be done by simple distance comparisons.
+      </p>
+		</li>
+		<li>
+			<h4><code>class Instance</code>  <em> (20 Points)</em></h4>
+      <p>
+        Here you should implement the intersection between a ray and an <em>instance</em> of any shape.
+        The new class should be called <code>Instance</code> and should encapsulate
+        a single <code>Shape</code> along with a <code>Transform</code>.
+      </p>
+		</li>
+  </ul>
 
-In the context of rendering, our goal will be to construct a tree where each
-leaf node only contains a small number of triangles (e.g. less than 10). At render
-time, this will allow most ray intersections to be pruned away since any ray
-will only touch a small number of octree nodes. An efficient ray intersection
-algorithm will then only traverse this subset of nodes until the closest
-intersection is found.
+	<h3>Part 2: Validation <em>(30 points)</em></h3>
+	<p>
+		Pass all \(\chi^2\) tests of the above intersection and include screen shots in your report.
+	</p>
 
-<h3>Preliminaries: Updating Nori and downloading scene data</h3>
+	<h4> What to submit </h4>
+	<p>
+		<ul>
+			<li> A correct implementation of all intersection problems. </li> 
+			<li> Screenshots of all test scenes.
+      <li> time comparisons between shape primitives and their triangulated counterpart.
+			</li>
+		</ul>
+	</p>
 
-<div class="text-justify">
-<p>
-Since the last assignment, we may have committed a new revision to the base Nori repository.
-Before continuing, merge this new revision into your current Nori codebase as follows:<br/>
-Make sure you added the <code>nori-base-2020</code> repository as <code>upstream</code> (only needs to be done once):
-<pre class="prettyprint lang-bash">
-$ git remote add upstream https://github.com/cs440-epfl/nori-base-2020.git
-</pre>
-After that, you can get always get the latest changes with:
-<pre class="prettyprint lang-bash">
-$ git pull upstream master
-</pre>
-There may be no new changes to pull. In rare cases, this may also trigger merge
-conflicts, if the same files were modified in both revisions.
-If you have difficulties with this step, refer to the git tutorials mentioned in
-Assignment 1.
-</p>
+<h3> Hacker Points: Iterated Function Systems <em>(20 points)</em></h3>
 
-<p>
-For this homework, we will be using the scene <code>scenes/pa2/ajax-normals.xml</code>.
-This scene references the 3D scan of a bust that is fairly large (~500K triangles). Due to
-its size, the actual mesh is not part of the repository and can be downloaded
-<a href="//rgl.s3.eu-central-1.amazonaws.com/media/uploads/wjakob/2017/03/01/ajax.zip">here</a>.
-</p>
-<div class="alert alert-danger" role="alert">
-    <b>Warning</b>: For this same reason, we ask you not to commit the file to
-    your repository. To make sure this doesn't happen, you can add the file
-    to your repository's <code>.gitignore</code> file (located at the root).
-</div>
-
-<p>
-Try rendering this new scene. You will find that rendering is <em>very</em> slow.
-The reason for this is that the Nori basecode currently implements a brute
-force ray intersection algorithm found in the files
-<code>include/nori/accel.h</code> and <code>include/nori/accel.cpp</code>.
-Our main concern is the function
-</p>
-
-<pre class="prettyprint lang-cpp">
-bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
-</pre>
-
-<p>
-which traces a ray <code>ray</code> against all triangles and stores the
-resulting information in special <code>Intersection</code> data structure.
-The function returns <code>true</code> if an intersection was found and
-<code>false</code> otherwise.
-The parameter <code>shadowRay</code> signals to the implementation
-whether a <em>shadow ray</em> is being traced. Tracing shadow rays is cheaper
-since we only care about whether a ray has <em>any</em> intersections at all,
-rather than searching the closest one. Furthermore, the
-<code>Intersection</code> data structure does not need to be filled for shadow
-rays.
-</p>
-
-<p>
-Currently, the problematic part of the implementation looks as follows:
-</p>
-
-<pre class="prettyprint lang-cpp">
-/* Brute force search through all triangles */
-for (uint32_t idx = 0; idx < m_mesh->getTriangleCount(); ++idx) {
-    float u, v, t;
-    if (m_mesh->rayIntersect(idx, ray, u, v, t)) {
-        /* An intersection was found! Can terminate
-           immediately if this is a shadow ray query */
-        if (shadowRay)
-            return true;
-        ray.maxt = its.t = t;
-        its.uv = Point2f(u, v);
-        its.mesh = m_mesh;
-        f = idx;
-        foundIntersection = true;
-    }
-}
-</pre>
-
-<p>
-In the above snippet, <tt>u</tt> and <tt>v</tt> denote the barycentric coordinates
-of the intersection (if it exists), and <tt>t</tt> is the distance traveled along the ray.
-</p>
-</div>
-
-<h3>Part 1: Octree construction <em>(50 points)</em></h3>
-<div class="text-justify">
-<p>
-Clearly, traversing 500K triangles for every ray in an image is not going to work, so we'll
-need a way to organize them more intelligently.
-</p>
-<p>
-Your objective for the first part of this assignment is to develop a tree
-construction algorithm that organizes the triangle data of the scene's meshes
-into an octree. At a high level, your code should look something like this:
-</p>
-<pre class="prettyprint lang-cpp">
-Node *build(bounding box, triangles) {
-    if (no triangles)
-        return nullptr;
-
-    if (only few triangles)
-        return new leaf node with triangles;
-
-    triangle_list list[8];
-
-    for (every triangle) {
-        for (int i = 0; i < 8; ++i) {
-            if (triangle overlaps sub-node i)
-                add to list[i];
-        }
-    }
-
-    Node *node = new Node();
-    for (int i = 0; i < 8; ++i)
-        node.child[i] = build(bounding box of sub-node i, list[i]);
-    return node;
-}
-</pre>
-<p>
-The specifics of the implementation (naming conventions, memory allocation,
-choice of auxiliary data structures) are completely up to you.
-We'll define "few triangles" as less than 10. For simplicity, you can assume that
-a triangle overlaps with an octree cell if the bounding box of the triangle's
-vertices overlap with the cell.
-</p>
-
-<p>
-Hint: Take a good look at <code>include/nori/bbox.h</code>. You will
-find that it provides a number of functions that might come quite handy.
-</p>
-
-<p>
-You may need to limit the depth of the tree to avoid pathological situations
-where a triangle list can never be split into less than 10 elements.
-</p>
-
-<p>
-Your construction code will invariably need to create a large number of
-octree nodes, which will in turn occupy a considerable amount of memory. A more
-compact representation that uses less memory per node will be more efficient
-when tracing rays at render time, since more of the tree will fit into the
-processor's cache. Think about what information truly needs to be stored, and
-what information is redundant and can be recomputed on the fly if needed later on.
-</p>
-
-<p>
-Include a section in your report where you discuss the design choices
-you've taken. Be sure to also report the following information:
-<ol>
-<li>What information do you store per octree node?</li>
-<li>How many bytes of memory does one of your octree nodes occupy?</li>
-<li>Statistics for the Ajax scene:
-    <ul>
-        <li>Construction time</li>
-        <li>Number of interior nodes</li>
-        <li>Number of leaf nodes</li>
-        <li>Average number of triangles per leaf node</li>
-    </ul>
-</li>
-</ol>
-</p>
-</div>
-
-<h3>Part 2: Ray traversal <em>(25 points)</em></h3>
-<div class="text-justify">
-<p>
-Having completed the acceleration data structure, the next step is to actually
-use it to trace rays. Modify the function
-</p>
-<pre class="prettyprint lang-cpp">
-bool rayIntersect(const Ray3f &ray, Intersection &its, bool shadowRay) const;
-</pre>
-<p>
-so that it performs a hierarchical traversal of the tree, which only visits
-octree nodes that overlap with the ray extents (in any order). Once more, take
-a good look at functionality that is already provided in
-<code>include/nori/bbox.h</code>.
-</p>
-<p>
-Include a section in your report where you discuss the design choices
-you've taken. Be sure to also report the following information:
-</p>
-<ol>
-<li>How long did it take to render the scene on your machine?</li>
-<li>How much of a speed-up did you achieve over what was there before?
-    You may need to reduce both resolution and number of samples per pixel of
-    the scene and extrapolate to obtain an estimate of the time required by
-    the brute force algorithm (this is based on the reasonable assumption that
-    the rendering time is proportional to the product of the number of pixels
-    and samples per pixel.)
-</li>
-</ol>
-</div>
-<h3>Part 3: Improved ray traversal <em>(25 points)</em></h3>
-<div class="text-justify">
-<p>
-Modify your original implementation so that it performs an ordered traversal of
-the child cells of an octree node from <em>closest</em> to <em>farthest</em>,
-where distance is defined as the ray distance \(t\) of the closer intersection
-between the ray and the bounding box of a child node. The function
-<code>std::sort</code> may be helpful.
-
-Note: when an intersection was previously found at a distance \(t_1\), it is
-unnecessary to traverse a child cell with distance \(t_2>t_1\). This can be
-used to prune away additional parts of the tree.
-</p>
-<p>
-Include a section in your report where you discuss the design choices
-you've taken. Be sure to also report the following information:
-</p>
-<ol>
-<li>Include the surface normal visualization of the Ajax bust rendered by both your basic and improved implementations. They should match perfectly.</li>
-<li>How long did it take to render the scene on your machine with this improved version?</li>
-<li>How much of a speedup is this relative to Part 2?</li>
-</ol>
-
-<div class="alert alert-info" role="alert"><b>Disclaimer</b>: An efficient ray tracing implementation is essential in modern rendering systems, and considerable care is taken to ensure that this operation runs as quickly as possible. A general rule of thumb is that certain expensive C++ constructs should never be used while tracing a ray (i.e. during octree traversal in your case). This includes operations that perform dynamic memory allocation (<code>malloc</code>, the <code>new</code> operator, or STL data structures that internally perform dynamic memory allocation, such as <code>std::vector</code>). Note that this doesn’t mean that you can’t use <code>std::vector</code>s in your code--in fact, you will find many of them in existing Nori code. However, a <code>std::vector</code> should never be created *per ray* inside performance-critical ray traversal code.
-</div>
-
-<div class="alert alert-info" role="alert"><b>Hint</b>: You can use the the excellent <a href="https://github.com/Tom94/tev">tev</a> image viewer to view EXR image files. It is particularly useful to compare two images:
-    <ol>
-        <li>Open the two images in <code>tev</code> (e.g. from the command line or with drag-and-drop).</li>
-        <li>With the first image selected, use <code>shift+click</code> to start comparing with the second image.</li>
-        <li>You can select different metrics (absolute error, squared error, etc) and color-coding at the top of the sidebar.</li>
-    </ol>
-Once an image is open in <code>tev</code>, you can hit <code>ctrl/cmd + r</code> to refresh it (e.g. when rendering the same scene repeatedly while making changes to the code).
-</div>
-</div>
-
-<h3>Bonus: Hacker Points <em>(10 points)</em></h3>
-
-<div class="alert alert-danger" role="alert"><b>Disclaimer</b>: Hacker points are “underpriced” bonus points
-for the daring few. Sometimes you might be required to implement something that was not taught in class and
-you might have to do some research and creative thinking. Hacker Points are awarded only to students who
-implemented all of the remaining assignment, and they are added to the final score.
-</div>
-<div class="text-justify">
-<p>
-While the octree greatly accelerates ray tracing, its construction
-unfortunately requires a considerable amount of time. What's worse is that all
-of this time is spent in serial computations that just use a single processor.
-However, the octree construction can clearly be parallelized: each subtree is independent
-of all others and can be processed by an separate thread.
-Find out how to use the Thread Building Blocks (TBB) library to benefit from
-this kind of parallelism and realize this in your construction code.
-Be sure to explain your design choices in the report and discuss performance
-compared to the serial algorithm.
-</p>
-</div>
+	<div class="alert alert-info" role="alert"><b>Disclaimer</b>: Hacker points are “underpriced” bonus points 
+	for the daring few. Sometimes you might be required to implement something that was not taught in class and 
+	you might have to do some research and creative thinking. Hacker Points are awarded only to students who 
+	implemented all of the remaining assignment. In addition Hacker Points are either fully awarded or not awarded at all.
+	</div>
+	<p> 
+		The goal of this exercise is to implement ray tracing for Iterated Function Systems. The IFS 
+    shall be specified in XML as a node containing a collection of affine transforms
+    composing the Hutchinson operator. You may try your implementation on classical examples
+    such as the <a src='https://en.wikipedia.org/wiki/Menger_sponge'>Menger sponge</a>.
+	</p>
 </div>
