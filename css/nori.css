@@ -1,26 +1,41 @@
 body {
-	background: #dcdfbc;
+	background: #EBF2F9;
 	padding-top: 80px;
 	padding-bottom: 40px;
+	padding-left: 10px;
+	padding-right: 10px;
 }
 
 /* Navbar with gradient and shadow */
 .navbar-shadow {
-  background-color: #2c2c2c;
-  background-image: linear-gradient(top, #333333, #222222);
+  background-color: #3777BD;
+  /*background-image: linear-gradient(top, #333333, #222222);*/
   background-repeat: repeat-x;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 3px rgba(0, 0, 0, 0.25);/*, inset 0 -5px 0 rgba(0, 0, 0, 0.1);*/
+}
+
+.navbar-inverse .navbar-nav>li>a {
+	color: #EBF2F9;
+}
+.navbar-inverse .navbar-nav>li>a:hover {
+	color: #7FAADA;
+}
+.navbar-inverse .navbar-brand {
+	color: #EBF2F9;
+}
+.navbar-inverse .navbar-brand:hover {
+	color: #7FAADA;
 }
 
 .thumbnail {
-  border: 1px solid #868867;
+  border: 1px solid #3777BD;
   background-color: rgba(255, 255, 255, 0.7);
+	border-radius: 8px;
 }
 
 .panel {
-  border: 2px solid #868867;
+  border: 2px solid #3777BD;
   background-color:transparent;
-  border-radius: 4px;
 }
 
 .panel-title {
@@ -28,11 +43,20 @@ body {
 }
 
 .panel-default > .panel-heading {
-  background-color: #c4ca9e;
+  background-color: #7FAADA;
+}
+
+.panel-title > a {
+color: #EBF2F9;
+text-decoration: none;
+}
+.panel-title > a:hover {
+  color: #3777BD;
+	text-decoration: none;
 }
 
 .panel-collapse {
-  border-top: 2px solid #868867;
+  border-top: 2px solid #3777BD;
 }
 
 /* centered columns styles */
@@ -56,7 +80,7 @@ h4 small,
 h5 small,
 h6 small {
   font-weight: normal;
-  color: #868867
+  color: #3777BD;
 }
 
 span[rel~="tooltip"] {
@@ -65,19 +89,20 @@ span[rel~="tooltip"] {
 }
 
 .page-header {
-  border-bottom: 1px solid #868867
+  border-bottom: 1px solid #3777BD;
 }
 
 
 /* Syntax-highlighting related CSS directives.
   'desert' scheme ported from vim to google prettify */
-pre.prettyprint { 
-  padding: 8px;
-  border: 1px solid #000;
-  background-color: #333; 
-  text-shadow: 0 1px 0 #000;
+pre.prettyprint {
+  padding: 15px;
+  border: 1px solid #555555;
+  background-color: #2C2C2C;
+  /*text-shadow: 0 1px 0 #EBF2F9;*/
+  border-radius: 8px;
 }
-code.prettyprint { 
+code.prettyprint {
 	background: #686959;
 	padding: 2px;
 	padding-left: 5px;
@@ -89,26 +114,26 @@ code.prettyprint {
 .kwd { color: #f0e68c; font-weight: bold }
 .com { color: #87ceeb } /* comment - skyblue */
 .typ { color: #98fb98 } /* type    - lightgreen */
-.lit { color: #cd5c5c } /* literal - darkred */
-.pun { color: #fff }    /* punctuation */
-.pln { color: #fff }    /* plaintext */
+.lit { color: #ffa0a0 } /* literal - pink */
+.pun { color: #ddd }    /* punctuation */
+.pln { color: #ddd }    /* plaintext */
 .tag { color: #f0e68c; font-weight: bold } /* html/xml tag    - lightyellow */
 .atn { color: #bdb76b; font-weight: bold } /* attribute name  - khaki */
 .atv { color: #ffa0a0 } /* attribute value - pink */
 .dec { color: #98fb98 } /* decimal         - lightgreen */
 
 ol.linenums {
-  margin: 0 0 0 33px;
-} 
+  margin: 0 0 0 25px;
+}
 ol.linenums li {
-  color: #bbb;
+  color: #ddd;
   line-height: 18px;
-  text-shadow: 0 1px 0 #000;
-  margin: 0 0 0 -33px;
+  /*text-shadow: 0 1px 0 #2B5C92;*/
+  margin: 0 0 0 -28px;
 }
 
 .prettyprint.linenums {
-	box-shadow: inset 40px 0 0 #333, inset 41px 0 0 #777;
+	box-shadow: inset 40px 0 0 #2C2C2C, inset 41px 0 0 #555555;
 }
 
 body {
@@ -134,10 +159,11 @@ h3 {
 
 .alert-danger {
   margin-top:10px;
-  background-color: #dba;
-  border-color: #ca9;
-  color: #333;
+  background-color: #EA725D;
+  border-color: #DD3A1D;
+  color: #222;
   text-shadow:none;
+	border-radius: 8px;
 }
 
 .alert-info {
@@ -145,17 +171,18 @@ h3 {
   border-color: #868867;
   color: #333;
   text-shadow:none;
-  background-color: #f4f5ea;
+  background-color: #EDD928;
+	  border-radius: 8px;
 }
 
-.table>thead>tr>th, 
-.table>tbody>tr>th, 
-.table>tfoot>tr>th, 
-.table>thead>tr>td, 
-.table>tbody>tr>td, 
+.table>thead>tr>th,
+.table>tbody>tr>th,
+.table>tfoot>tr>th,
+.table>thead>tr>td,
+.table>tbody>tr>td,
 .table>tfoot>tr>td,
 .table>tbody,
 .table>thead,
 .table>tfoot{
-  border-color: #888 !important;
+  border-color: #3777BD !important;
 }
