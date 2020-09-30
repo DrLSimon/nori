@@ -23,28 +23,10 @@
 
 NORI_NAMESPACE_BEGIN
 
-/**
- * \brief Bounding Volume Hierarchy for fast ray intersection queries
- *
- * This class builds a Bounding Volume Hierarchy (BVH) using a greedy
- * divide and conquer build strategy, which locally maximizes a criterion
- * known as the Surface Area Heuristic (SAH) to obtain a tree that is
- * particularly well-suited for ray intersection queries.
- *
- * Construction of a BVH is generally slow; the implementation here runs
- * in parallel to accelerate this process much as possible. For details
- * on how this works, refer to the paper
- *
- * "Fast and Parallel Construction of SAH-based Bounding Volume Hierarchies"
- * by Ingo Wald (Proc. IEEE/EG Symposium on Interactive Ray Tracing, 2007)
- *
- * \author Wenzel Jakob
- */
 class Accel : public Shape{
-    friend class BVHBuildTask;
 public:
     /// Create a new and empty BVH
-    Accel() { m_meshOffset.push_back(0u); }
+    Accel() {m_meshOffset.push_back(0u);}
 
     /// Release all resources
     virtual ~Accel() { clear(); };
@@ -123,53 +105,10 @@ protected:
         return m_meshes[meshIdx]->getCentroid(index);
     }
 
-    /// Compute internal tree statistics
-    std::pair<float, uint32_t> statistics(uint32_t index = 0) const;
 
-    /* BVH node in 32 bytes */
-    struct BVHNode {
-        union {
-            struct {
-                unsigned flag : 1;
-                uint32_t size : 31;
-                uint32_t start;
-            } leaf;
-
-            struct {
-                unsigned flag : 1;
-                uint32_t axis : 31;
-                uint32_t rightChild;
-            } inner;
-
-            uint64_t data;
-        };
-        BoundingBox3f bbox;
-
-        bool isLeaf() const {
-            return leaf.flag == 1;
-        }
-
-        bool isInner() const {
-            return leaf.flag == 0;
-        }
-
-        bool isUnused() const {
-            return data == 0;
-        }
-
-        uint32_t start() const {
-            return leaf.start;
-        }
-
-        uint32_t end() const {
-            return leaf.start + leaf.size;
-        }
-    };
 private:
-    std::vector<Mesh *> m_meshes;       ///< List of meshes registered with the BVH
+    std::vector<Mesh *> m_meshes;       ///< List of meshes 
     std::vector<uint32_t> m_meshOffset; ///< Index of the first triangle for each shape
-    std::vector<BVHNode> m_nodes;       ///< BVH nodes
-    std::vector<uint32_t> m_indices;    ///< Index references by BVH nodes
     BoundingBox3f m_bbox;               ///< Bounding box of the entire BVH
 };
 
