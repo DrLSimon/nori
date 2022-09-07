@@ -38,7 +38,7 @@ Assignment 1.
 The default version of Nori includes a very efficient acceleration structure (BVH).
 Start by deactivating this acceleration:
 <pre class="prettyprint lang-bash">
-git checkout noaccel -- include/nori/accel.h src/accel.cpp 
+git checkout no-accel -- include/nori/accel.h src/accel.cpp 
 </pre>
 Recompile Nori and try rendering this new scene. You will find that rendering is <em>very</em> slow.
 The reason for this is that the Nori basecode currently implements a brute
