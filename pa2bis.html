@@ -38,6 +38,7 @@ Assignment 1.
 The default version of Nori includes a very efficient acceleration structure (BVH).
 Start by deactivating this acceleration:
 <pre class="prettyprint lang-bash">
+git pull
 git checkout no-accel -- include/nori/accel.h src/accel.cpp 
 </pre>
 Recompile Nori and try rendering this new scene. You will find that rendering is <em>very</em> slow.
@@ -69,20 +70,23 @@ Currently, the problematic part of the implementation looks as follows:
 </p>
 
 <pre class="prettyprint lang-cpp">
+//! todo (Part 2): replace this search with the Octree traversal
 /* Brute force search through all triangles */
-for (uint32_t idx = 0; idx < m_mesh->getTriangleCount(); ++idx) {
-    float u, v, t;
-    if (m_mesh->rayIntersect(idx, ray, u, v, t)) {
-        /* An intersection was found! Can terminate
-           immediately if this is a shadow ray query */
-        if (shadowRay)
-            return true;
-        ray.maxt = its.t = t;
-        its.uv = Point2f(u, v);
-        its.mesh = m_mesh;
-        f = idx;
-        foundIntersection = true;
-    }
+for (auto idx : m_triangles) {
+  uint32_t local_idx = idx;
+  auto mesh = getMesh(findMesh(local_idx));
+  float u, v, t;
+  if (mesh->rayIntersect(local_idx, ray, u, v, t)) {
+    /* An intersection was found! Can terminate
+       immediately if this is a shadow ray query */
+    if (shadowRay)
+      return true;
+    hitmesh = mesh;
+    ray.maxt = its.t = t;
+    its.uv = Point2f(u, v);
+    f = idx;
+    foundIntersection = true;
+  }
 }
 </pre>
 
@@ -104,7 +108,7 @@ construction algorithm that organizes the triangle data of the mesh into an
 octree. At a high level, your code should look something like this:
 </p>
 <pre class="prettyprint lang-cpp">
-Node *build(bounding box, triangles) {
+OctreeNode *build(bounding box, triangles) {
     if (no triangles)
         return nullptr;
 
@@ -120,16 +124,16 @@ Node *build(bounding box, triangles) {
         }
     }
 
-    Node *node = new Node();
+    OctreeNode *node = new OctreeNode(box);
     for (int i = 0; i < 8; ++i)
         node.child[i] = build(bounding box of sub-node i, list[i]);
     return node;
 }
 </pre>
 <p>
-The specifics of the implementation (naming conventions, memory allocation,
-choice of auxiliary data structures) are completely up to you.
-We'll define "few triangles" as less than 10. For simplicity, you can assume that
+Note that two helper structures are already defined : <code>OctreeNode</code> and <code>OctreeLeaf</code>.
+We'll define "few triangles" as less than 10. 
+*NB:* For simplicity, you can assume that
 a triangle overlaps with an octree cell if the bounding box of the triangle's
 vertices overlap with the cell. 
 </p>
