@@ -109,9 +109,6 @@ octree. At a high level, your code should look something like this:
 </p>
 <pre class="prettyprint lang-cpp">
 OctreeNode *build(bounding box, triangles) {
-    if (no triangles)
-        return nullptr;
-
     if (only few triangles)
         return new leaf node with triangles;
 
@@ -119,8 +116,11 @@ OctreeNode *build(bounding box, triangles) {
 
     for (every triangle) {
         for (int i = 0; i < 8; ++i) {
-            if (triangle overlaps sub-node i)
-                add to list[i];
+        if (triangle overlaps sub-node i) {
+            add to list[i];
+            //! beware infinite recursion if "list[i]==triangles"
+            if (list[i].size() == triangles.size())
+               return new leaf node with triangles
         }
     }
 
@@ -133,7 +133,7 @@ OctreeNode *build(bounding box, triangles) {
 <p>
 Note that two helper structures are already defined : <code>OctreeNode</code> and <code>OctreeLeaf</code>.
 We'll define "few triangles" as less than 10. 
-*NB:* For simplicity, you can assume that
+<b>NB:</b> For simplicity, you can assume that
 a triangle overlaps with an octree cell if the bounding box of the triangle's
 vertices overlap with the cell. 
 </p>
@@ -141,11 +141,6 @@ vertices overlap with the cell.
 <p>
 Hint: Take a good look at <code>include/nori/bbox.h</code>. You will
 find that it provides a number of functions that might come quite handy.
-</p>
-
-<p>
-You may need to limit the depth of the tree to avoid pathological situations
-where a triangle list can never be split into less than 10 elements.
 </p>
 
 <p>
@@ -158,20 +153,12 @@ what information is redundant and can be recomputed on the fly if needed later o
 </p>
 
 <p>
-Include a section in your report where you discuss the design choices
-you've taken. Be sure to also report the following information:
-<ol>
-<li>What information do you store per octree node?</li>
-<li>How many bytes of memory does one of your octree nodes occupy?</li>
-<li>Statistics for the Ajax scene: 
-    <ul>
-        <li>Construction time</li>
-        <li>Number of interior nodes</li>
-        <li>Number of leaf nodes</li>
-        <li>Average number of triangles per leaf node</li>
-    </ul>
-</li>
-</ol>
+At the end of this part, it is important to test that the octree is at least referencing
+all triangles of the scene. To do so, you should traverse the octree and store all triangles 
+from the leaf of the octree inside a <code>std::set</code>. A placeholder for this octree
+traversal is provided in the <code>Accel::activate</code> method. In order to get ready 
+for the next part, we recommand an iterative
+traversal based on a stack or a queue.
 </p>
 </div>
 
